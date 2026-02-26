@@ -42,15 +42,20 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
 
 
-reader = None
-try:
-    import easyocr
-    print("Loading EasyOCR reader... (this may take a moment on first run)")
-    reader = easyocr.Reader(['en'], gpu=False)  
-    print("✅ EasyOCR loaded successfully!")
-except Exception as e:
-    print(f"⚠️ EasyOCR could not be loaded: {e}")
-    print("The system will use pattern-based plate detection only.")
+reader = None  # global variable
+
+def get_easyocr_reader():
+    global reader
+    if reader is None:
+        try:
+            print("Loading EasyOCR reader... (this may take a moment)")
+            import easyocr
+            reader = easyocr.Reader(['en'], gpu=False)
+            print("✅ EasyOCR loaded successfully!")
+        except Exception as e:
+            print(f"⚠️ EasyOCR could not be loaded: {e}")
+            reader = None
+    return reader
 
 
 @app.context_processor
@@ -672,6 +677,9 @@ def detect_plate(image_path, filename):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        print(" Database tables created successfully!")
+        print("Database tables created successfully!")
+
+    import os
+    port = int(os.environ.get("PORT", 5000))  # Use Render's port if provided
+    app.run(debug=True, host='0.0.0.0', port=port)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
